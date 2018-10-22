@@ -1,3 +1,4 @@
+pytest
 yapf
-isort
+isort>=4.3.4
 pre-commit

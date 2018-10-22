@@ -1,5 +1,8 @@
-from bip32utils import BIP32_HARDEN, BIP32Key
+from binascii import hexlify
+
 from mnemonic import Mnemonic
+
+from bip32utils import BIP32_HARDEN, BIP32Key
 from sha3 import keccak_256
 
 
@@ -7,7 +10,10 @@ class hardened(str):
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        return super().__eq__(other)
+        return str(self) == str(other)
+
+    def __repr__(self):
+        return "%s'" % self
 
 
 class HDKey(object):
@@ -19,7 +25,7 @@ class HDKey(object):
     def from_entropy(cls, entropy, *args, **kwargs):
         return cls(BIP32Key.fromEntropy(entropy), *args, **kwargs)
 
-    def __init__(self, _bip32utils_key: bytes, _bip32_path: list = ()):
+    def __init__(self, _bip32utils_key, _bip32_path=()):
         self._bip32utils_key = _bip32utils_key
         self._bip32_path = _bip32_path or []
 
@@ -44,8 +50,9 @@ class HDKey(object):
 
     @property
     def bip32_path(self):
-        return 'm/' + '/'.join(f"{i}'" if isinstance(i, hardened) else f"{i}"
-                               for i in self._bip32_path)
+        return 'm/' + '/'.join(
+            '%s%s' % (i, "'" if isinstance(i, hardened) else "")
+            for i in self._bip32_path)
 
     @property
     def btc_address(self):
@@ -57,7 +64,7 @@ class HDKey(object):
 
     @property
     def eth_address(self):
-        return self.eth_address_bytes.hex()
+        return hexlify(self.eth_address_bytes).decode('ascii')
 
     @property
     def eth_address_bytes(self):
@@ -68,16 +75,16 @@ class HDKey(object):
         assert len(self._bip32_path) >= 3 and self._bip32_path[0] == hardened(
             44) and isinstance(
                 self._bip32_path[1],
-                hardened), f'{self.bip32_path} is not a valid BIP 44 path'
+                hardened), '%r is not a valid BIP 44 path' % self.bip32_path
         try:
             network = {
                 '0': 'btc',
                 '60': 'eth',
             }[str(self._bip32_path[1])]
-            return getattr(self, f'{network}_address')
+            return getattr(self, '%s_address' % network)
         except KeyError:
             raise NotImplementedError(
-                f'Unknown network with ID {self._bip32_path[1]}')
+                'Unknown network with ID %s' % self._bip32_path[1])
 
     @property
     def public_key_bytes(self):

@@ -1,7 +1,9 @@
-import bip32utils.Base58
+from binascii import unhexlify
+
 import pytest
 
 import bip32
+import bip32utils.Base58
 
 DATA = '''
 m/44'/60'/0'/0/0	bb2Ca357e5780141f34500D43E492bEe15531211	02eed2a172ed2c25ffa74d10db6b37987b508c7129113297cba1be7466191211b1	17b95359ef2a332fa917507b5cafa06c3998d0451c7916fded9c923a7f8b866b
@@ -21,10 +23,10 @@ masterkey = bip32.HDKey.from_mnemonic(
 @pytest.mark.parametrize('bip32_path,native_address,pubkey,privkey', DATA)
 def test(bip32_path, native_address, pubkey, privkey):
     try:
-        privkey = bytes.fromhex(privkey)
+        privkey = unhexlify(privkey)
     except:
         privkey = bip32utils.Base58.check_decode(privkey)[1:-1]
-    pubkey = bytes.fromhex(pubkey)
+    pubkey = unhexlify(pubkey)
     derived = masterkey.derive_path(bip32_path)
     assert derived.bip32_path == bip32_path
     assert derived.bip44_address.lower() == native_address.lower()

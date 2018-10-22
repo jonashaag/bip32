@@ -17,5 +17,5 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-    install_requires=['mnemonic', 'bip32utils'],
+    install_requires=['mnemonic', 'bip32utils', 'pysha3'],
 )

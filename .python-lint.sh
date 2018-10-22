@@ -6,7 +6,7 @@ if [[ $# < 1 ]]; then
 fi
 
 # Ensure isort and yapf are up-to-date
-venv/bin/pip install -q `cat requirements-dev.txt  | grep -E 'isort|yapf'`
+pip install -q `cat requirements-dev.txt  | grep -E 'isort|yapf'`
 
-venv/bin/yapf --style '{indent_dictionary_value: True}' -i "$@"
-venv/bin/isort -y -ns __init__.py "$@"
+yapf --style '{indent_dictionary_value: True}' -i "$@"
+isort -y -ns __init__.py "$@"
