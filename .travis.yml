@@ -4,5 +4,5 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
-install: python setup.py install && pip install -r requirements-dev.txt
+install: python setup.py develop && pip install -r requirements-dev.txt
 script: py.test tests.py && pre-commit run -a -v --show-diff-on-failure
