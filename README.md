@@ -1,6 +1,8 @@
 # bip32
 BIP 32 / BIP 44 tools for ETH and BTC
 
+[![Build Status](https://travis-ci.org/jonashaag/bip32.svg?branch=master)](https://travis-ci.org/jonashaag/bip32)
+
 Usage:
 
 ```pycon
