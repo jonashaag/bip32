@@ -37,6 +37,12 @@ b'\x17\xb9SY\xef*3/\xa9\x17P{\\\xaf\xa0l9\x98\xd0E\x1cy\x16\xfd\xed\x9c\x92:\x7f
 
 # Manual (faster) deriving:
 >>> account_root = master.derive_path("m/44'/60'/0'/0")
->>> account_root.derive_path([0]).eth_address
+>>> account_root.derive_single(0).eth_address
 'bb2ca357e5780141f34500d43e492bee15531211'
+>>> account_root.derive_single("0").eth_address
+'bb2ca357e5780141f34500d43e492bee15531211'
+
+# Iter child accounts
+>>> next(master.iter_children(start_index=0, end_index=100))
+(0, <bip32.HDKey object at 0x10f64b780>)
 ```
