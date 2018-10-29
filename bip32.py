@@ -1,19 +1,32 @@
 from binascii import hexlify
 
-from mnemonic import Mnemonic
-
 from bip32utils import BIP32_HARDEN, BIP32Key
+from mnemonic import Mnemonic
 from sha3 import keccak_256
 
 
-class hardened(str):
-    def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            return False
-        return str(self) == str(other)
+def hardened(n):
+    if is_hardened(n):
+        raise ValueError('%d is already hardened' % n)
+    return n | BIP32_HARDEN
 
-    def __repr__(self):
-        return "%s'" % self
+
+def is_hardened(n):
+    return n & BIP32_HARDEN
+
+
+def parse_hardened_str(s):
+    if s[-1] == "'":
+        return hardened(int(s[:-1]))
+    else:
+        return int(s)
+
+
+def format_hardened(n):
+    if is_hardened(n):
+        return "%d'" % (n & ~BIP32_HARDEN)
+    else:
+        return "%d" % n
 
 
 class HDKey(object):
@@ -29,30 +42,32 @@ class HDKey(object):
         self._bip32utils_key = _bip32utils_key
         self._bip32_path = _bip32_path or []
 
+    def __eq__(self, other):
+        return isinstance(
+            other, self.
+            __class__) and self.private_key_bytes == other.private_key_bytes
+
     def derive_path(self, bip32_path):
         if isinstance(bip32_path, str):
             bip32_path = bip32_path.split('/')
-            assert bip32_path[0] == 'm', "BIP 32 path must start with 'm/'"
-            bip32_path = [
-                hardened(s[:-1]) if s[-1] == "'" else s for s in bip32_path[1:]
-            ]
+            assert bip32_path.pop(0) == 'm', "BIP 32 path must start with 'm/'"
+            bip32_path = [parse_hardened_str(s) for s in bip32_path]
 
-        next_index = bip32_path.pop(0)
-        is_hardened = isinstance(next_index, hardened)
-        next_derivative = self.__class__(
-            self._bip32utils_key.CKDpriv(
-                int(next_index) | (is_hardened and BIP32_HARDEN or 0)),
-            self._bip32_path + [next_index])
+        next_derivative = self.derive_single(bip32_path.pop(0))
         if not bip32_path:
             return next_derivative
         else:
             return next_derivative.derive_path(bip32_path)
 
+    def derive_single(self, idx):
+        if not isinstance(idx, int):
+            idx = parse_hardened_str(idx)
+        return self.__class__(
+            self._bip32utils_key.CKDpriv(idx), self._bip32_path + [idx])
+
     @property
     def bip32_path(self):
-        return 'm/' + '/'.join(
-            '%s%s' % (i, "'" if isinstance(i, hardened) else "")
-            for i in self._bip32_path)
+        return 'm/' + '/'.join(map(format_hardened, self._bip32_path))
 
     @property
     def btc_address(self):
@@ -73,18 +88,18 @@ class HDKey(object):
     @property
     def bip44_address(self):
         assert len(self._bip32_path) >= 3 and self._bip32_path[0] == hardened(
-            44) and isinstance(
-                self._bip32_path[1],
-                hardened), '%r is not a valid BIP 44 path' % self.bip32_path
+            44) and is_hardened(
+                self._bip32_path[1]
+            ), '%r is not a valid BIP 44 path' % self.bip32_path
         try:
             network = {
-                '0': 'btc',
-                '60': 'eth',
-            }[str(self._bip32_path[1])]
+                0 | BIP32_HARDEN: 'btc',
+                60 | BIP32_HARDEN: 'eth',
+            }[self._bip32_path[1]]
             return getattr(self, '%s_address' % network)
         except KeyError:
-            raise NotImplementedError(
-                'Unknown network with ID %s' % self._bip32_path[1])
+            raise NotImplementedError('Unknown network with ID %s' %
+                                      format_hardened(self._bip32_path[1]))
 
     @property
     def public_key_bytes(self):
@@ -93,3 +108,14 @@ class HDKey(object):
     @property
     def private_key_bytes(self):
         return self._bip32utils_key.PrivateKey()
+
+    def iter_children(self, start_index=0, end_index='kind'):
+        if end_index == 'kind':
+            if is_hardened(start_index):
+                end_index = hardened(2**31 - 1)
+            else:
+                end_index = 2**31 - 1
+        elif end_index == 'all':
+            end_index = hardened(2**31 - 1)
+        for i in range(start_index, end_index + 1):
+            yield i, self.derive_single(i)
