@@ -10,7 +10,7 @@ Usage:
 
 # Private master key from mnemonic or entropy
 >>> master = bip32.HDKey.from_mnemonic('zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo when')
->>> master = bip32.HDKey.from_entropy(...bytes...)
+>>> master = bip32.HDKey.from_entropy(...bytes...)  # NOT the same as from private key! (which is impossible)
 
 # ETH
 >>> master.derive_path("m/44'/60'/0'/0/0").eth_address
